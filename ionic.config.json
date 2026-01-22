@@ -1,0 +1,7 @@
+{
+  "name": "tenantly",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
