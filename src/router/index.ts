@@ -52,6 +52,14 @@ const routes: Array<RouteRecordRaw> = [
     path: '/landlord/applications/:id',
     component: () => import('@/views/landlord/ApplicationDetail.vue'),
     meta: { requiresAuth: true, role: 'landlord' }
+  },
+  {
+    path: '/privacy',
+    component: () => import('@/views/shared/PrivacyPolicy.vue')
+  },
+  {
+    path: '/terms',
+    component: () => import('@/views/shared/TermsOfService.vue')
   }
 ]
 

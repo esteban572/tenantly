@@ -1,20 +1,25 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true" class="signup-page">
-      <div class="signup-container">
-        <!-- Hero Section (Left Side - Desktop) -->
-        <div class="hero-section">
-          <SignupHero />
-        </div>
+      <div class="signup-wrapper">
+        <div class="signup-container">
+          <!-- Hero Section (Left Side - Desktop) -->
+          <div class="hero-section">
+            <SignupHero />
+          </div>
 
-        <!-- Form Section (Right Side) -->
-        <div class="form-section">
-          <SignupForm 
-            :loading="loading"
-            :error-msg="errorMsg"
-            @submit="handleSignup"
-          />
+          <!-- Form Section (Right Side) -->
+          <div class="form-section">
+            <SignupForm 
+              :loading="loading"
+              :error-msg="errorMsg"
+              @submit="handleSignup"
+            />
+          </div>
         </div>
+        
+        <!-- Footer -->
+        <Footer />
       </div>
     </ion-content>
   </ion-page>

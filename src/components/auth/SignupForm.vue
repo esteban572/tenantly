@@ -111,8 +111,8 @@
             required
           />
           <span class="checkbox-text">
-            I agree to the <a href="#" class="link">Terms of Service</a> and 
-            <a href="#" class="link">Privacy Policy</a>
+            I agree to the <a href="/terms" class="link">Terms of Service</a> and 
+            <a href="/privacy" class="link">Privacy Policy</a>
           </span>
         </label>
       </div>

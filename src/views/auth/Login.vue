@@ -1,20 +1,25 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true" class="login-page">
-      <div class="login-container">
-        <!-- Hero Section (Left Side - Desktop) -->
-        <div class="hero-section">
-          <SignupHero />
-        </div>
+      <div class="login-wrapper">
+        <div class="login-container">
+          <!-- Hero Section (Left Side - Desktop) -->
+          <div class="hero-section">
+            <SignupHero />
+          </div>
 
-        <!-- Form Section (Right Side) -->
-        <div class="form-section">
-          <LoginForm 
-            :loading="loading"
-            :error-msg="errorMsg"
-            @submit="handleLogin"
-          />
+          <!-- Form Section (Right Side) -->
+          <div class="form-section">
+            <LoginForm 
+              :loading="loading"
+              :error-msg="errorMsg"
+              @submit="handleLogin"
+            />
+          </div>
         </div>
+        
+        <!-- Footer -->
+        <Footer />
       </div>
     </ion-content>
   </ion-page>
@@ -27,6 +32,7 @@ import { supabase } from '@/services/supabaseClient';
 import { useRouter } from 'vue-router';
 import SignupHero from '@/components/auth/SignupHero.vue';
 import LoginForm from '@/components/auth/LoginForm.vue';
+import Footer from '@/components/shared/Footer.vue';
 import '@/theme/auth.css';
 
 const loading = ref(false);
@@ -77,10 +83,16 @@ const handleLogin = async (formData: any) => {
   --background: #F9FAFB;
 }
 
+.login-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .login-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
+  flex: 1;
   width: 100%;
 }
 
