@@ -1,28 +1,19 @@
 <template>
   <ion-page>
-    <ion-content class="ion-padding flex items-center justify-center">
-      <div class="w-full max-w-md mx-auto mt-10">
-        <h1 class="text-3xl font-bold text-center mb-8">Tenantly</h1>
-        
-        <div v-if="errorMsg" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-           <span class="block sm:inline">{{ errorMsg }}</span>
+    <ion-content :fullscreen="true" class="login-page">
+      <div class="login-container">
+        <!-- Hero Section (Left Side - Desktop) -->
+        <div class="hero-section">
+          <SignupHero />
         </div>
 
-        <div class="space-y-4">
-          <ion-item>
-            <ion-label position="stacked">Email</ion-label>
-            <ion-input v-model="email" type="email" placeholder="email@example.com"></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Password</ion-label>
-            <ion-input v-model="password" type="password" placeholder="********"></ion-input>
-          </ion-item>
-          <ion-button expand="block" class="mt-8" @click="handleLogin" :disabled="loading">
-             {{ loading ? 'Logging In...' : 'Login' }}
-          </ion-button>
-          <p class="text-center mt-4">
-            Don't have an account? <a href="/signup">Sign up</a>
-          </p>
+        <!-- Form Section (Right Side) -->
+        <div class="form-section">
+          <LoginForm 
+            :loading="loading"
+            :error-msg="errorMsg"
+            @submit="handleLogin"
+          />
         </div>
       </div>
     </ion-content>
@@ -31,24 +22,25 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { IonPage, IonContent, IonItem, IonLabel, IonInput, IonButton } from '@ionic/vue';
+import { IonPage, IonContent } from '@ionic/vue';
 import { supabase } from '@/services/supabaseClient';
 import { useRouter } from 'vue-router';
+import SignupHero from '@/components/auth/SignupHero.vue';
+import LoginForm from '@/components/auth/LoginForm.vue';
+import '@/theme/auth.css';
 
-const email = ref('');
-const password = ref('');
 const loading = ref(false);
 const errorMsg = ref('');
 const router = useRouter();
 
-const handleLogin = async () => {
+const handleLogin = async (formData: any) => {
   try {
     loading.value = true;
     errorMsg.value = '';
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.value,
-      password: password.value,
+      email: formData.email,
+      password: formData.password,
     });
 
     if (error) throw error;
@@ -63,7 +55,6 @@ const handleLogin = async () => {
       
       if (profileError) {
          console.error('Error fetching profile:', profileError);
-         // Fallback or specific error handling
          throw new Error('Failed to fetch user profile.');
       }
 
@@ -80,3 +71,54 @@ const handleLogin = async () => {
   }
 };
 </script>
+
+<style scoped>
+.login-page {
+  --background: #F9FAFB;
+}
+
+.login-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.hero-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.form-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #F9FAFB;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .login-container {
+    grid-template-columns: 40% 60%;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .login-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .hero-section {
+    min-height: auto;
+  }
+
+  .form-section {
+    padding: 1.5rem;
+  }
+}
+</style>
