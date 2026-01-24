@@ -47,16 +47,20 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonFooter, IonInput, IonButton } from '@ionic/vue';
 import { supabase } from '@/services/supabaseClient';
+import { conversationService } from '@/services/conversationService';
+import { useAuthStore } from '@/stores/authStore';
 
 const route = useRoute();
-const otherUserId = route.params.id as string;
+const authStore = useAuthStore();
+const conversationId = route.params.id as string;
 const currentUserId = ref('');
+const otherUserId = ref('');
 const otherUserName = ref('Chat');
 const messages = ref<any[]>([]);
 const newMessage = ref('');
 const content = ref();
 
-let subscription: any = null;
+let messageChannel: any = null;
 
 const scrollToBottom = () => {
    // Simple scroll implementation, IonContent has its own methods but this often works for v-for
@@ -65,64 +69,75 @@ const scrollToBottom = () => {
 };
 
 const fetchMessages = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  currentUserId.value = user.id;
+  if (!authStore.user) return;
+  currentUserId.value = authStore.user.id;
 
-  // Fetch Name
-  const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', otherUserId).single();
-  if (profile) otherUserName.value = profile.full_name;
-
-  // Fetch History
-  const { data } = await supabase
-    .from('messages')
-    .select('*')
-    .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
-    .order('created_at', { ascending: true });
+  try {
+    // Get conversation details to find the other participant
+    const conversation = await conversationService.getConversation(conversationId);
     
-  messages.value = data || [];
-  setTimeout(scrollToBottom, 500);
+    if (!conversation) {
+      console.error('Conversation not found');
+      return;
+    }
+
+    // Determine the other participant
+    const otherParticipant = conversationService.getOtherParticipant(conversation, authStore.user.id);
+    if (otherParticipant) {
+      otherUserId.value = otherParticipant.id;
+      otherUserName.value = otherParticipant.full_name || 'User';
+    }
+
+    // Fetch conversation messages
+    const msgs = await conversationService.getConversationMessages(conversationId);
+    messages.value = msgs;
+    
+    // Mark messages as read
+    await conversationService.markConversationAsRead(conversationId, authStore.user.id);
+    
+    setTimeout(scrollToBottom, 500);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+  }
 };
 
 const subscribeToMessages = () => {
-  subscription = supabase
-    .channel('public:messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-       const newMsg = payload.new;
-       if (
-         (newMsg.sender_id === currentUserId.value && newMsg.receiver_id === otherUserId) ||
-         (newMsg.sender_id === otherUserId && newMsg.receiver_id === currentUserId.value)
-       ) {
-         messages.value.push(newMsg);
-         scrollToBottom();
-       }
-    })
-    .subscribe();
+  // Subscribe to new messages in this conversation
+  messageChannel = conversationService.subscribeToConversation(
+    conversationId,
+    (message) => {
+      messages.value.push(message);
+      scrollToBottom();
+      
+      // Mark as read if we're the receiver
+      if (authStore.user && message.receiver_id === authStore.user.id) {
+        conversationService.markMessageAsRead(message.id);
+      }
+    }
+  );
 };
 
 const sendMessage = async () => {
-  if (!newMessage.value.trim()) return;
+  if (!newMessage.value.trim() || !authStore.user || !otherUserId.value) return;
 
   const msgContent = newMessage.value;
   newMessage.value = ''; // Optimistic clear
 
-  const { error } = await supabase
-    .from('messages')
-    .insert([
-      {
-        sender_id: currentUserId.value,
-        receiver_id: otherUserId,
-        content: msgContent
-      }
-    ]);
+  try {
+    await conversationService.sendMessage(
+      conversationId,
+      authStore.user.id,
+      otherUserId.value,
+      msgContent
+    );
 
-  if (error) {
+    
+    // Message will appear via real-time subscription
+  } catch (error) {
     console.error('Send failed', error);
     alert('Failed to send message');
+    newMessage.value = msgContent; // Restore message on error
   }
-  // The subscription will append it to the view, or we can push manually if latency is high, 
-  // but RLS "My Insert" policy means I see it immediately usually.
-  // Actually, subscription listens to DB changes. If I insert, I get notified.
 };
 
 onMounted(() => {
@@ -131,6 +146,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (subscription) supabase.removeChannel(subscription);
+  if (messageChannel) {
+    conversationService.unsubscribe(messageChannel);
+  }
 });
 </script>

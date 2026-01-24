@@ -1,0 +1,9 @@
+{
+  "status": "healthy",
+  "version": "0.0.1",
+  "timestamp": "2026-01-23T00:00:00Z",
+  "services": {
+    "app": "ok",
+    "supabase": "ok"
+  }
+}

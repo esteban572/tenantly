@@ -1,16 +1,11 @@
 <template>
-  <div class="login-form-container">
-    <div class="form-header">
-      <h2 class="form-title">Welcome Back</h2>
-      <p class="form-subtitle">Sign in to continue to Tenantly</p>
-    </div>
-
+  <div class="login-form">
     <div v-if="errorMsg" class="error-alert">
       <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
       <span>{{ errorMsg }}</span>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="login-form">
+    <form @submit.prevent="handleSubmit" class="login-form-fields">
       <!-- Email -->
       <div class="form-group">
         <label class="form-label">Email Address</label>
@@ -76,17 +71,6 @@
           Signing In...
         </span>
       </button>
-
-      <!-- Divider -->
-      <div class="divider">
-        <span class="divider-text">or</span>
-      </div>
-
-      <!-- Sign Up Link -->
-      <p class="form-footer">
-        Don't have an account? 
-        <a href="/signup" class="link">Create one now</a>
-      </p>
     </form>
   </div>
 </template>
@@ -128,37 +112,6 @@ const handleSubmit = () => {
 </script>
 
 <style scoped>
-.login-form-container {
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 2.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-/* Header */
-.form-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.form-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1F2937;
-  margin: 0 0 0.5rem 0;
-}
-
-.form-subtitle {
-  font-size: 1rem;
-  color: #6B7280;
-  margin: 0;
-}
-
 /* Error Alert */
 .error-alert {
   display: flex;
@@ -179,7 +132,7 @@ const handleSubmit = () => {
 }
 
 /* Form */
-.login-form {
+.login-form-fields {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;

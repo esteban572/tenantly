@@ -1,16 +1,11 @@
 <template>
-  <div class="signup-form-container">
-    <div class="form-header">
-      <h2 class="form-title">Create Your Account</h2>
-      <p class="form-subtitle">Join thousands finding their perfect home</p>
-    </div>
-
+  <div class="signup-form">
     <div v-if="errorMsg" class="error-alert">
       <ion-icon :icon="alertCircleOutline" class="error-icon"></ion-icon>
       <span>{{ errorMsg }}</span>
     </div>
 
-    <form @submit.prevent="handleSubmit" class="signup-form">
+    <form @submit.prevent="handleSubmit" class="signup-form-fields">
       <!-- Full Name -->
       <div class="form-group">
         <label class="form-label">Full Name</label>
@@ -98,9 +93,6 @@
         </p>
       </div>
 
-      <!-- Role Selector -->
-      <RoleSelector v-model="formData.role" />
-
       <!-- Terms & Conditions -->
       <div class="form-group">
         <label class="checkbox-label">
@@ -129,12 +121,6 @@
           Creating Account...
         </span>
       </button>
-
-      <!-- Login Link -->
-      <p class="form-footer">
-        Already have an account? 
-        <a href="/login" class="link">Sign in</a>
-      </p>
     </form>
   </div>
 </template>
@@ -162,7 +148,6 @@ const formData = ref({
   email: '',
   password: '',
   confirmPassword: '',
-  role: 'tenant',
   agreeToTerms: false
 });
 
@@ -230,37 +215,6 @@ const handleSubmit = () => {
 </script>
 
 <style scoped>
-.signup-form-container {
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 2.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-/* Header */
-.form-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.form-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1F2937;
-  margin: 0 0 0.5rem 0;
-}
-
-.form-subtitle {
-  font-size: 1rem;
-  color: #6B7280;
-  margin: 0;
-}
-
 /* Error Alert */
 .error-alert {
   display: flex;
@@ -281,7 +235,7 @@ const handleSubmit = () => {
 }
 
 /* Form */
-.signup-form {
+.signup-form-fields {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
