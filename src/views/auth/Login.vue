@@ -28,8 +28,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { IonPage, IonContent } from '@ionic/vue';
-import { supabase } from '@/services/supabaseClient';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
 import SignupHero from '@/components/auth/SignupHero.vue';
 import LoginForm from '@/components/auth/LoginForm.vue';
 import Footer from '@/components/shared/Footer.vue';
@@ -38,33 +38,18 @@ import '@/theme/auth.css';
 const loading = ref(false);
 const errorMsg = ref('');
 const router = useRouter();
+const authStore = useAuthStore();
 
 const handleLogin = async (formData: any) => {
   try {
     loading.value = true;
     errorMsg.value = '';
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: formData.email,
-      password: formData.password,
-    });
+    await authStore.signIn(formData.email, formData.password);
 
-    if (error) throw error;
-
-    if (data.user) {
-      // Fetch user profile to get role
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-      
-      if (profileError) {
-         console.error('Error fetching profile:', profileError);
-         throw new Error('Failed to fetch user profile.');
-      }
-
-      if (profile?.role === 'landlord') {
+    if (authStore.user) {
+      const role = authStore.profile?.role;
+      if (role === 'landlord') {
         router.push('/landlord/dashboard');
       } else {
         router.push('/tenant/dashboard');

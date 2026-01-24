@@ -14,18 +14,28 @@
       </div>
       
       <div v-else-if="conversations.length === 0" class="text-center mt-20">
-        <p class="text-gray-500">No messages yet.</p>
+        <p class="text-gray-500">No conversations yet.</p>
+        <p class="text-gray-400 text-sm mt-2">Start a conversation by messaging someone from their profile!</p>
       </div>
 
       <ion-list v-else>
-        <ion-item v-for="conv in conversations" :key="conv.otherUserId" :router-link="`/messages/${conv.otherUserId}`" detail>
+        <ion-item 
+          v-for="conv in conversations" 
+          :key="conv.id" 
+          :router-link="`/messages/${conv.id}`" 
+          detail
+          button
+        >
           <ion-avatar slot="start">
-             <img :src="conv.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'" />
+             <img :src="conv.otherUser?.avatar_url || 'https://ionicframework.com/docs/img/demos/avatar.svg'" />
           </ion-avatar>
           <ion-label>
-            <h2>{{ conv.name }}</h2>
-            <p>{{ conv.role }}</p>
+            <h2 class="font-semibold">{{ conv.otherUser?.full_name || 'User' }}</h2>
+            <p class="text-sm text-gray-600">{{ conv.last_message || 'No messages yet' }}</p>
           </ion-label>
+          <ion-note slot="end" v-if="conv.last_message_at" class="text-xs">
+            {{ formatTime(conv.last_message_at) }}
+          </ion-note>
         </ion-item>
       </ion-list>
     </ion-content>
@@ -33,52 +43,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonList, IonItem, IonLabel, IonAvatar, IonSpinner } from '@ionic/vue';
-import { supabase } from '@/services/supabaseClient';
+import { ref, onMounted, computed } from 'vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, IonList, IonItem, IonLabel, IonAvatar, IonSpinner, IonNote } from '@ionic/vue';
+import { conversationService, type Conversation } from '@/services/conversationService';
+import { useAuthStore } from '@/stores/authStore';
 
-interface Conversation {
-  otherUserId: string;
-  name: string;
-  role: string;
-  avatarUrl?: string; // Optional
+interface ConversationWithOtherUser extends Conversation {
+  otherUser?: any;
 }
 
-const conversations = ref<Conversation[]>([]);
+const authStore = useAuthStore();
+const conversations = ref<ConversationWithOtherUser[]>([]);
 const loading = ref(true);
 
-const fetchConversations = async () => {
-  loading.value = true;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  // Supabase doesn't support "Select distinct on specific column" via simple JS SDK easily with complex joins for 'latest message'.
-  // But we just want list of UNIQUE people we talked to.
-  // We can fetch all messages where sender or receiver is me.
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
   
-  const { data: sent } = await supabase.from('messages').select('receiver_id').eq('sender_id', user.id);
-  const { data: received } = await supabase.from('messages').select('sender_id').eq('receiver_id', user.id);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+};
 
-  const ids = new Set<string>();
-  sent?.forEach((m: any) => ids.add(m.receiver_id));
-  received?.forEach((m: any) => ids.add(m.sender_id));
-
-  // Now fetch profiles for these IDs
-  if (ids.size > 0) {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, full_name, role, avatar_url')
-      .in('id', Array.from(ids));
-      
-    conversations.value = profiles?.map((p: any) => ({
-      otherUserId: p.id,
-      name: p.full_name,
-      role: p.role,
-      avatarUrl: p.avatar_url
-    })) || [];
+const fetchConversations = async () => {
+  if (!authStore.user) return;
+  
+  loading.value = true;
+  
+  try {
+    const convs = await conversationService.getUserConversations(authStore.user.id);
+    
+    // Add the other user info to each conversation
+    conversations.value = convs.map(conv => {
+      const otherUser = conversationService.getOtherParticipant(conv, authStore.user!.id);
+      return {
+        ...conv,
+        otherUser
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+  } finally {
+    loading.value = false;
   }
-
-  loading.value = false;
 };
 
 onMounted(() => {

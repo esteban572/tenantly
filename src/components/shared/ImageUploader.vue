@@ -155,9 +155,10 @@ const uploadImages = async (): Promise<string[]> => {
     emit('upload-complete', urls);
     
     return urls;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
-    throw error;
+    const errorMsg = error?.message || error?.error?.message || 'Failed to upload images';
+    throw new Error(`Image upload failed: ${errorMsg}`);
   } finally {
     uploading.value = false;
   }

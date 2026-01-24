@@ -28,8 +28,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { IonPage, IonContent } from '@ionic/vue';
-import { supabase } from '@/services/supabaseClient';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/authStore';
 import SignupHero from '@/components/auth/SignupHero.vue';
 import SignupForm from '@/components/auth/SignupForm.vue';
 import '@/theme/auth.css';
@@ -37,43 +37,18 @@ import '@/theme/auth.css';
 const loading = ref(false);
 const errorMsg = ref('');
 const router = useRouter();
+const authStore = useAuthStore();
 
 const handleSignup = async (formData: any) => {
   try {
     loading.value = true;
     errorMsg.value = '';
     
-    // 1. Sign up with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    });
+    await authStore.signUp(formData.email, formData.password, formData.fullName);
 
-    if (authError) throw authError;
-
-    if (authData.user) {
-      // 2. Create Profile Entry
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          { 
-            id: authData.user.id,
-            full_name: formData.fullName,
-            role: formData.role 
-          }
-        ]);
-
-      if (profileError) {
-         console.error('Profile creation failed:', profileError);
-         throw new Error('Failed to create user profile.');
-      }
-
-      // 3. Redirect
-      if (formData.role === 'landlord') {
-        router.push('/landlord/dashboard');
-      } else {
-        router.push('/tenant/dashboard');
-      }
+    if (authStore.user) {
+      // Redirect to onboarding for new users
+      router.push('/onboarding');
     }
   } catch (error: any) {
     errorMsg.value = error.message;
